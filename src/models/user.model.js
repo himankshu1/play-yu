@@ -50,10 +50,9 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-// Making sure that the password is saved only when its decrypted (not taking any chance).
-// Arrow fn is not used because of the lexical scope concept of 'this' keyword in arrow fn. In general fn, it works different. Async is to let the system to encrypt the password and then perform the password saving to the db.
+// Hey there
+
 userSchema.pre("save", async function (next) {
-  // checking if the password field in userSchema has been modified
   if (!this.isModified("password")) {
     return next();
   }
