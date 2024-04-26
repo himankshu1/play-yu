@@ -1,10 +1,6 @@
 import asyncHandler from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js";
-import {
-  User,
-  generateAccessToken,
-  generateRefreshToken,
-} from "../models/user.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -17,7 +13,7 @@ const generateAccessAndRefreshToken = async (userId) => {
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
-    return { refreshToken, accessToken };
+    return { accessToken, refreshToken };
   } catch (error) {
     throw new ApiError(
       500,
@@ -111,9 +107,9 @@ const loginUser = asyncHandler(async (req, res) => {
   // generate access token and refresh token
   // send cookie
 
-  const { username, email, password: userPassword } = req.body;
+  const { username, email, password } = req.body;
 
-  if (!username || !email) {
+  if (!username && !email) {
     throw new ApiError(400, "username or email is required!");
   }
 
@@ -125,13 +121,13 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User doesn't exist!");
   }
 
-  const isPasswordValid = await user.isPasswordCorrect(userPassword);
+  const isPasswordValid = await user.isPasswordCorrect(password);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials!");
   }
 
-  const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     user._id
   );
 
