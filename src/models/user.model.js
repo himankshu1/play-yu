@@ -1,6 +1,10 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateTokens.js";
 
 const userSchema = new Schema(
   {
@@ -50,13 +54,11 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-// Hey there
-
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     return next();
   }
-  this.password = bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
@@ -65,33 +67,11 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-// Injecting a method "generateAccessToken" in schema's object
-userSchema.methods.generateAccessToken = function () {
-  return jwt.sign(
-    {
-      _id: this._id,
-      email: this.email,
-      username: this.username,
-      fullName: this.fullName,
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-    }
-  );
-};
+// Injecting a method "generateAccessToken" in schema's object. Only the traditional function has "this" keyword and it refers to the object inside which the function is called
+userSchema.methods.generateAccessToken = generateAccessToken;
 
 // Injecting a method "generateRefreshToken" in schema's object
-userSchema.methods.generateRefreshToken = async function () {
-  return jwt.sign(
-    {
-      _id: this._id,
-    },
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-    }
-  );
-};
+userSchema.methods.generateRefreshToken = generateRefreshToken;
 
 export const User = mongoose.model("User", userSchema);
+export { generateAccessToken, generateRefreshToken };
